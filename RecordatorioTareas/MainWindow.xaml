@@ -1,0 +1,296 @@
+﻿<Window x:Class="RecordatorioTareas.MainWindow"
+        xmlns:local="clr-namespace:RecordatorioTareas"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        Title="Recordatorio de Tareas"
+        Height="450"
+        Width="800"
+        Icon="Resources/task.ico">
+
+
+    <Window.Resources>
+        <tb:TaskbarIcon x:Key="AppTrayIcon"
+                    IconSource="/RecordatorioTareas;component/Resources/task.ico"
+                    ToolTipText="Recordatorio de Tareas">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Mostrar" Click="Tray_Mostrar_Click"/>
+                    <MenuItem Header="Salir" Click="Tray_Salir_Click"/>
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
+
+        <local:BoolToSiNoConverter x:Key="BoolToSiNoConverter" />
+    </Window.Resources>
+
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Barra lateral -->
+        <Border Grid.Column="0" Background="#1E1E1E">
+            <TabControl x:Name="MainTabs"
+                    TabStripPlacement="Left"
+                    BorderThickness="0"
+                    Background="Transparent">
+
+                <!-- Template: solo muestra la lista de tabs (izquierda) -->
+                <TabControl.Template>
+                    <ControlTemplate TargetType="TabControl">
+                        <Border Background="{TemplateBinding Background}">
+                            <TabPanel IsItemsHost="True"/>
+                        </Border>
+                    </ControlTemplate>
+                </TabControl.Template>
+
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Margin" Value="0,2"/>
+                        <Setter Property="Padding" Value="12,10"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabItem">
+                                    <Border x:Name="Bd"
+                                        Background="Transparent"
+                                        CornerRadius="8"
+                                        Margin="8,2"
+                                        Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#2D2D30"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#333337"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
+                    <Style TargetType="TabPanel">
+                        <Setter Property="Margin" Value="0,20,0,0"/>
+                    </Style>
+                </TabControl.Resources>
+
+                <!-- SOLO headers -->
+                <TabItem Header="📋  Lista"/>
+                <TabItem Header="📅  Calendario"/>
+                <TabItem Header="🗓️  Semana"/>
+                <TabItem Header="⚙️  Configuración"/>
+            </TabControl>
+        </Border>
+
+        <!-- Área derecha: aquí va TODO el contenido real -->
+        <Border Grid.Column="1" Background="#111111" Padding="12">
+            <Grid>
+                <!-- 4 vistas, una visible a la vez -->
+                <Grid x:Name="ViewLista">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- barra de botones + búsqueda -->
+                            <RowDefinition Height="*"/>
+                            <!-- contenido principal -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- barra de estado -->
+                        </Grid.RowDefinitions>
+
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Barra de botones arriba -->
+                        <DockPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0 0 0 10">
+
+                            <!-- Buscador a la derecha -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Buscar:" Margin="0 0 5 0" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtBuscar" Width="180"
+                         TextChanged="TxtBuscar_TextChanged"/>
+                            </StackPanel>
+
+                            <!-- Botones a la izquierda -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Agregar tarea" Width="100" Height="30"
+                    Margin="0 0 10 0"
+                    Click="AgregarTarea_Click"/>
+
+                                <Button Content="Editar tarea" Width="100" Height="30"
+                    Margin="0 0 10 0"
+                    Click="EditarTarea_Click"/>
+
+                                <Button Content="Eliminar tarea" Width="100" Height="30"
+                    Margin="0 0 10 0"
+                    Click="EliminarTarea_Click"/>
+
+                                <!-- NUEVO -->
+                                <Button Content="Config" Width="80" Height="30"
+                    Click="AbrirConfiguracion_Click"/>
+                            </StackPanel>
+
+                        </DockPanel>
+
+
+                        <!-- Panel de categorías -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0 0 10 0">
+                            <TextBlock Text="Categorías" FontWeight="Bold" Margin="0 0 0 5"/>
+
+                            <ListBox x:Name="ListaCategorias"
+                     Height="200"
+                     DisplayMemberPath="Name"
+                     SelectionChanged="ListaCategorias_SelectionChanged"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0 5 0 0">
+                                <TextBox x:Name="TxtNuevaCategoria" Width="110"/>
+                                <Button Content="Agregar" Width="70" Margin="5 0 0 0"
+                        Click="AgregarCategoria_Click"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0 5 0 0">
+                                <Button Content="Renombrar" Width="80"
+                        Click="RenombrarCategoria_Click"/>
+                                <Button Content="Eliminar" Width="80" Margin="5 0 0 0"
+                        Click="EliminarCategoria_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+
+
+                        <!-- Lista de tareas -->
+                        <ListView x:Name="ListaTareas"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        MouseDoubleClick="ListaTareas_MouseDoubleClick"
+                        ContextMenuOpening="ListaTareas_ContextMenuOpening">
+                            <ListView.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Editar" Click="EditarTarea_Click"/>
+                                    <MenuItem x:Name="MenuItemToggleCompletada"
+                                Header="Marcar como completada"
+                                Click="MarcarCompletada_Click"/>
+                                    <MenuItem Header="Eliminar" Click="EliminarTarea_Click"/>
+                                </ContextMenu>
+                            </ListView.ContextMenu>
+
+                            <!-- lo que ya tenías del ListView.View va aquí debajo -->
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Título" Width="200"
+                                    DisplayMemberBinding="{Binding Title}"/>
+
+                                    <GridViewColumn Header="Vence" Width="120">
+                                        <GridViewColumn.DisplayMemberBinding>
+                                            <Binding Path="DueDate" StringFormat="{}{0:dd/MM/yyyy}"/>
+                                        </GridViewColumn.DisplayMemberBinding>
+                                    </GridViewColumn>
+
+                                    <GridViewColumn Header="Hora" Width="80"
+                                    DisplayMemberBinding="{Binding ReminderTime}"/>
+
+                                    <GridViewColumn Header="Completada" Width="100">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding IsCompleted, Converter={StaticResource BoolToSiNoConverter}}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <!-- Barra de estado -->
+                        <StatusBar Grid.Row="2" Grid.ColumnSpan="2">
+                            <StatusBarItem>
+                                <TextBlock x:Name="TxtEstadoTotal" Text="Total: 0"/>
+                            </StatusBarItem>
+                            <StatusBarItem>
+                                <TextBlock x:Name="TxtEstadoPendientes" Text="Pendientes: 0"/>
+                            </StatusBarItem>
+                            <StatusBarItem>
+                                <TextBlock x:Name="TxtEstadoVencidas" Text="Vencidas: 0"/>
+                            </StatusBarItem>
+                        </StatusBar>
+
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="ViewCalendario" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Calendario mensual -->
+                        <Calendar x:Name="CalendarioTareas"
+                          Grid.Column="0"
+                          Margin="0 0 10 0"
+                          DisplayDateChanged="CalendarioTareas_DisplayDateChanged"
+                          SelectedDatesChanged="CalendarioTareas_SelectedDatesChanged"
+                          MouseDoubleClick="CalendarioTareas_MouseDoubleClick"
+                          AllowDrop="True"
+                          Drop="CalendarioTareas_Drop" />
+
+                        <!-- Lista de tareas del día seleccionado -->
+                        <ListView x:Name="ListaTareasDelDia"
+                          Grid.Column="1"
+                          PreviewMouseLeftButtonDown="ListaTareasDelDia_PreviewMouseLeftButtonDown"
+                          MouseMove="ListaTareasDelDia_MouseMove">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Hora" Width="80"
+                                            DisplayMemberBinding="{Binding ReminderTime}"/>
+                                    <GridViewColumn Header="Título" Width="220"
+                                            DisplayMemberBinding="{Binding Title}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="ViewSemana" Visibility="Collapsed">
+                    <Grid>
+                        <ListView x:Name="ListaSemana">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Día" Width="120"
+                                            DisplayMemberBinding="{Binding DiaTexto}"/>
+                                    <GridViewColumn Header="Hora" Width="80"
+                                            DisplayMemberBinding="{Binding HoraTexto}"/>
+                                    <GridViewColumn Header="Título" Width="220"
+                                            DisplayMemberBinding="{Binding Title}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="ViewConfig" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Configuración"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Margin="0 0 0 10"/>
+                        <Button Content="Abrir configuración"
+                            Width="180"
+                            Height="32"
+                            Click="AbrirConfiguracion_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>
